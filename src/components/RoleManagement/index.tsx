@@ -1,144 +1,135 @@
-import React, { useState, useEffect } from "react";
-import { User, Role, Application } from "../../types";
-import { api } from "../../services/api";
+import React, { useState } from "react";
+import "../../styles/RoleManagement.css";
+
+const mockData = {
+  users: [
+    { id: "1", name: "John Doe", email: "john@example.com" },
+    { id: "2", name: "Jane Smith", email: "jane@example.com" },
+    { id: "3", name: "Mike Johnson", email: "mike@example.com" },
+  ],
+  roles: [
+    { id: "1", name: "Admin", description: "Full system access" },
+    { id: "2", name: "User", description: "Basic access" },
+    { id: "3", name: "Manager", description: "Department management" },
+  ],
+  applications: [
+    { id: "1", name: "CRM System", description: "Customer management" },
+    { id: "2", name: "HR Portal", description: "Employee management" },
+    { id: "3", name: "Finance App", description: "Financial management" },
+  ],
+};
 
 const RoleManagement = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedRoleForApp, setSelectedRoleForApp] = useState("");
+  const [selectedApp, setSelectedApp] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Selected items for assignments
-  const [selectedUser, setSelectedUser] = useState<string>("");
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [selectedApp, setSelectedApp] = useState<string>("");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [usersRes, rolesRes, appsRes] = await Promise.all([
-          api.getUsers(),
-          api.getRoles(),
-          api.getApplications(),
-        ]);
-
-        setUsers(usersRes.data);
-        setRoles(rolesRes.data);
-        setApplications(appsRes.data);
-      } catch (err) {
-        setError("Failed to load data");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleAssignUserToRole = async () => {
-    if (!selectedUser || !selectedRole) return;
-
-    try {
-      await api.assignUserToRole(selectedUser, selectedRole);
-      // Show success message or update UI
-    } catch (err) {
-      setError("Failed to assign user to role");
+  const handleAssignUserToRole = () => {
+    if (!selectedUser || !selectedRole) {
+      setErrorMessage("Please select both user and role");
+      setTimeout(() => setErrorMessage(""), 3000);
+      return;
     }
+
+    setSuccessMessage("User successfully assigned to role!");
+    setTimeout(() => setSuccessMessage(""), 3000);
+    setSelectedUser("");
+    setSelectedRole("");
   };
 
-  const handleAssignRoleToApp = async () => {
-    if (!selectedRole || !selectedApp) return;
-
-    try {
-      await api.assignRoleToApplication(selectedRole, selectedApp);
-      // Show success message or update UI
-    } catch (err) {
-      setError("Failed to assign role to application");
+  const handleAssignRoleToApp = () => {
+    if (!selectedRoleForApp || !selectedApp) {
+      setErrorMessage("Please select both role and application");
+      setTimeout(() => setErrorMessage(""), 3000);
+      return;
     }
-  };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+    setSuccessMessage("Role successfully assigned to application!");
+    setTimeout(() => setSuccessMessage(""), 3000);
+    setSelectedRoleForApp("");
+    setSelectedApp("");
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Role Management</h1>
+    <div className="role-management">
+      {successMessage && (
+        <div className="success-message">{successMessage}</div>
+      )}
+      {errorMessage && <div className="error-message">{errorMessage}</div>}
 
-      {/* User to Role Assignment Section */}
-      <div className="mb-8 p-4 border rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">Assign User to Role</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="section">
+        <h2>Assign User to Role</h2>
+        <div className="select-group">
+          <label>Select User</label>
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
-            className="p-2 border rounded"
           >
-            <option value="">Select User</option>
-            {users.map((user) => (
+            <option value="">Choose a user...</option>
+            {mockData.users.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Role</option>
-            {roles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}
+                {user.name} ({user.email})
               </option>
             ))}
           </select>
         </div>
-        <button
-          onClick={handleAssignUserToRole}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Assign User to Role
+
+        <div className="select-group">
+          <label>Select Role</label>
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+          >
+            <option value="">Choose a role...</option>
+            {mockData.roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.name} - {role.description}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button className="button" onClick={handleAssignUserToRole}>
+          Assign Role to User
         </button>
       </div>
 
-      {/* Role to Application Assignment Section */}
-      <div className="p-4 border rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">
-          Assign Role to Application
-        </h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="section">
+        <h2>Assign Role to Application</h2>
+        <div className="select-group">
+          <label>Select Role</label>
           <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="p-2 border rounded"
+            value={selectedRoleForApp}
+            onChange={(e) => setSelectedRoleForApp(e.target.value)}
           >
-            <option value="">Select Role</option>
-            {roles.map((role) => (
+            <option value="">Choose a role...</option>
+            {mockData.roles.map((role) => (
               <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedApp}
-            onChange={(e) => setSelectedApp(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Application</option>
-            {applications.map((app) => (
-              <option key={app.id} value={app.id}>
-                {app.name}
+                {role.name} - {role.description}
               </option>
             ))}
           </select>
         </div>
-        <button
-          onClick={handleAssignRoleToApp}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
+
+        <div className="select-group">
+          <label>Select Application</label>
+          <select
+            value={selectedApp}
+            onChange={(e) => setSelectedApp(e.target.value)}
+          >
+            <option value="">Choose an application...</option>
+            {mockData.applications.map((app) => (
+              <option key={app.id} value={app.id}>
+                {app.name} - {app.description}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button className="button" onClick={handleAssignRoleToApp}>
           Assign Role to Application
         </button>
       </div>

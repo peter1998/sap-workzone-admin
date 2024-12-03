@@ -33,8 +33,12 @@ const RoleManagement = () => {
   const [selectedRoleForApp, setSelectedRoleForApp] = useState("");
   const [selectedApp, setSelectedApp] = useState("");
 
+  // Search states
+  const [userSearch, setUserSearch] = useState("");
+  const [roleSearch, setRoleSearch] = useState("");
+  const [appSearch, setAppSearch] = useState("");
+
   useEffect(() => {
-    // Simulate API loading
     setTimeout(() => {
       setUsers(mockData.users);
       setRoles(mockData.roles);
@@ -54,13 +58,33 @@ const RoleManagement = () => {
     }, 3000);
   };
 
+  const filterUsers = () =>
+    users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+        user.email.toLowerCase().includes(userSearch.toLowerCase())
+    );
+
+  const filterRoles = () =>
+    roles.filter(
+      (role) =>
+        role.name.toLowerCase().includes(roleSearch.toLowerCase()) ||
+        role.description?.toLowerCase().includes(roleSearch.toLowerCase())
+    );
+
+  const filterApps = () =>
+    applications.filter(
+      (app) =>
+        app.name.toLowerCase().includes(appSearch.toLowerCase()) ||
+        app.description?.toLowerCase().includes(appSearch.toLowerCase())
+    );
+
   const handleAssignUserToRole = async () => {
     if (!selectedUser || !selectedRole) {
       showMessage("Please select both user and role", true);
       return;
     }
 
-    // Simulate API call
     setLoading(true);
     setTimeout(() => {
       showMessage("Successfully assigned user to role");
@@ -76,7 +100,6 @@ const RoleManagement = () => {
       return;
     }
 
-    // Simulate API call
     setLoading(true);
     setTimeout(() => {
       showMessage("Successfully assigned role to application");
@@ -99,12 +122,19 @@ const RoleManagement = () => {
         <h2>Assign User to Role</h2>
         <div className="select-group">
           <label>Select User</label>
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            className="search-input"
+          />
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
           >
             <option value="">Choose a user...</option>
-            {users.map((user) => (
+            {filterUsers().map((user) => (
               <option key={user.id} value={user.id}>
                 {user.name} ({user.email})
               </option>
@@ -114,12 +144,19 @@ const RoleManagement = () => {
 
         <div className="select-group">
           <label>Select Role</label>
+          <input
+            type="text"
+            placeholder="Search roles..."
+            value={roleSearch}
+            onChange={(e) => setRoleSearch(e.target.value)}
+            className="search-input"
+          />
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
           >
             <option value="">Choose a role...</option>
-            {roles.map((role) => (
+            {filterRoles().map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name} - {role.description}
               </option>
@@ -136,12 +173,19 @@ const RoleManagement = () => {
         <h2>Assign Role to Application</h2>
         <div className="select-group">
           <label>Select Role</label>
+          <input
+            type="text"
+            placeholder="Search roles..."
+            value={roleSearch}
+            onChange={(e) => setRoleSearch(e.target.value)}
+            className="search-input"
+          />
           <select
             value={selectedRoleForApp}
             onChange={(e) => setSelectedRoleForApp(e.target.value)}
           >
             <option value="">Choose a role...</option>
-            {roles.map((role) => (
+            {filterRoles().map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name} - {role.description}
               </option>
@@ -151,12 +195,19 @@ const RoleManagement = () => {
 
         <div className="select-group">
           <label>Select Application</label>
+          <input
+            type="text"
+            placeholder="Search applications..."
+            value={appSearch}
+            onChange={(e) => setAppSearch(e.target.value)}
+            className="search-input"
+          />
           <select
             value={selectedApp}
             onChange={(e) => setSelectedApp(e.target.value)}
           >
             <option value="">Choose an application...</option>
-            {applications.map((app) => (
+            {filterApps().map((app) => (
               <option key={app.id} value={app.id}>
                 {app.name} - {app.description}
               </option>

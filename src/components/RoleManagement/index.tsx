@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { User, Role, Application } from "../../types";
 import "../../styles/RoleManagement.css";
 
 const mockData = {
@@ -8,50 +9,84 @@ const mockData = {
     { id: "3", name: "Mike Johnson", email: "mike@example.com" },
   ],
   roles: [
-    { id: "1", name: "Admin", description: "Full system access" },
-    { id: "2", name: "User", description: "Basic access" },
-    { id: "3", name: "Manager", description: "Department management" },
+    { id: "1", name: "Admin", description: "Full access" },
+    { id: "2", name: "User", description: "Limited access" },
+    { id: "3", name: "Manager", description: "Department access" },
   ],
   applications: [
-    { id: "1", name: "CRM System", description: "Customer management" },
-    { id: "2", name: "HR Portal", description: "Employee management" },
-    { id: "3", name: "Finance App", description: "Financial management" },
+    { id: "1", name: "CRM", description: "Customer Management" },
+    { id: "2", name: "HR", description: "Human Resources" },
+    { id: "3", name: "Finance", description: "Financial System" },
   ],
 };
 
 const RoleManagement = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedRoleForApp, setSelectedRoleForApp] = useState("");
   const [selectedApp, setSelectedApp] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleAssignUserToRole = () => {
+  useEffect(() => {
+    // Simulate API loading
+    setTimeout(() => {
+      setUsers(mockData.users);
+      setRoles(mockData.roles);
+      setApplications(mockData.applications);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  const showMessage = (message: string, isError = false) => {
+    if (isError) {
+      setErrorMessage(message);
+    } else {
+      setSuccessMessage(message);
+    }
+    setTimeout(() => {
+      isError ? setErrorMessage("") : setSuccessMessage("");
+    }, 3000);
+  };
+
+  const handleAssignUserToRole = async () => {
     if (!selectedUser || !selectedRole) {
-      setErrorMessage("Please select both user and role");
-      setTimeout(() => setErrorMessage(""), 3000);
+      showMessage("Please select both user and role", true);
       return;
     }
 
-    setSuccessMessage("User successfully assigned to role!");
-    setTimeout(() => setSuccessMessage(""), 3000);
-    setSelectedUser("");
-    setSelectedRole("");
+    // Simulate API call
+    setLoading(true);
+    setTimeout(() => {
+      showMessage("Successfully assigned user to role");
+      setSelectedUser("");
+      setSelectedRole("");
+      setLoading(false);
+    }, 500);
   };
 
-  const handleAssignRoleToApp = () => {
+  const handleAssignRoleToApp = async () => {
     if (!selectedRoleForApp || !selectedApp) {
-      setErrorMessage("Please select both role and application");
-      setTimeout(() => setErrorMessage(""), 3000);
+      showMessage("Please select both role and application", true);
       return;
     }
 
-    setSuccessMessage("Role successfully assigned to application!");
-    setTimeout(() => setSuccessMessage(""), 3000);
-    setSelectedRoleForApp("");
-    setSelectedApp("");
+    // Simulate API call
+    setLoading(true);
+    setTimeout(() => {
+      showMessage("Successfully assigned role to application");
+      setSelectedRoleForApp("");
+      setSelectedApp("");
+      setLoading(false);
+    }, 500);
   };
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="role-management">
@@ -69,7 +104,7 @@ const RoleManagement = () => {
             onChange={(e) => setSelectedUser(e.target.value)}
           >
             <option value="">Choose a user...</option>
-            {mockData.users.map((user) => (
+            {users.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.name} ({user.email})
               </option>
@@ -84,7 +119,7 @@ const RoleManagement = () => {
             onChange={(e) => setSelectedRole(e.target.value)}
           >
             <option value="">Choose a role...</option>
-            {mockData.roles.map((role) => (
+            {roles.map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name} - {role.description}
               </option>
@@ -106,7 +141,7 @@ const RoleManagement = () => {
             onChange={(e) => setSelectedRoleForApp(e.target.value)}
           >
             <option value="">Choose a role...</option>
-            {mockData.roles.map((role) => (
+            {roles.map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name} - {role.description}
               </option>
@@ -121,7 +156,7 @@ const RoleManagement = () => {
             onChange={(e) => setSelectedApp(e.target.value)}
           >
             <option value="">Choose an application...</option>
-            {mockData.applications.map((app) => (
+            {applications.map((app) => (
               <option key={app.id} value={app.id}>
                 {app.name} - {app.description}
               </option>

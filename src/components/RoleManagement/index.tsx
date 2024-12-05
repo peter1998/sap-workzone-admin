@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { User, Role, Application } from "../../types";
 import Pagination from "../Pagination";
+import { useDebounce } from "../../hooks/useDebounce";
 import "../../styles/RoleManagement.css";
 
+// Extended mock data to demonstrate pagination and filtering
 const mockData = {
   users: Array.from({ length: 50 }, (_, i) => ({
     id: `${i + 1}`,
@@ -21,7 +23,10 @@ const mockData = {
   })),
 };
 
+// Configuration constants
 const ITEMS_PER_PAGE = 5;
+const DEBOUNCE_DELAY = 300;
+const MESSAGE_DURATION = 3000;
 
 const RoleManagement = () => {
   // Entity states
@@ -31,6 +36,11 @@ const RoleManagement = () => {
 
   // UI states
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState({
+    users: false,
+    roles: false,
+    apps: false,
+  });
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -40,78 +50,105 @@ const RoleManagement = () => {
   const [selectedRoleForApp, setSelectedRoleForApp] = useState("");
   const [selectedApp, setSelectedApp] = useState("");
 
-  // Search states
+  // Search states with debouncing
   const [userSearch, setUserSearch] = useState("");
   const [roleSearch, setRoleSearch] = useState("");
   const [appSearch, setAppSearch] = useState("");
+
+  // Debounced search values to prevent excessive filtering
+  const debouncedUserSearch = useDebounce(userSearch, DEBOUNCE_DELAY);
+  const debouncedRoleSearch = useDebounce(roleSearch, DEBOUNCE_DELAY);
+  const debouncedAppSearch = useDebounce(appSearch, DEBOUNCE_DELAY);
 
   // Pagination states
   const [userPage, setUserPage] = useState(1);
   const [rolePage, setRolePage] = useState(1);
   const [appPage, setAppPage] = useState(1);
 
+  // Load initial data
   useEffect(() => {
-    setTimeout(() => {
-      setUsers(mockData.users);
-      setRoles(mockData.roles);
-      setApplications(mockData.applications);
-      setLoading(false);
-    }, 1000);
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        setUsers(mockData.users);
+        setRoles(mockData.roles);
+        setApplications(mockData.applications);
+      } catch (error) {
+        showMessage("Failed to load initial data", true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
-  const paginateData = <T extends any>(
-    items: T[],
-    currentPage: number,
-    searchValue: string,
-    filterFn: (item: T) => boolean
-  ) => {
-    const filtered = items.filter(filterFn);
-    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
+  // Optimized pagination function
+  const paginateData = useCallback(
+    <T extends any>(
+      items: T[],
+      currentPage: number,
+      searchValue: string,
+      filterFn: (item: T) => boolean
+    ) => {
+      const filtered = items.filter(filterFn);
+      const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
 
-    return {
-      items: filtered.slice(startIndex, endIndex),
-      totalPages,
-    };
-  };
+      return {
+        items: filtered.slice(startIndex, endIndex),
+        totalPages,
+      };
+    },
+    []
+  );
 
-  const getFilteredUsers = () => {
+  // Memoized filter functions
+  const getFilteredUsers = useCallback(() => {
     return paginateData(
       users,
       userPage,
-      userSearch,
+      debouncedUserSearch,
       (user) =>
-        user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-        user.email.toLowerCase().includes(userSearch.toLowerCase())
+        user.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) ||
+        user.email.toLowerCase().includes(debouncedUserSearch.toLowerCase())
     );
-  };
+  }, [users, userPage, debouncedUserSearch]);
 
-  const getFilteredRoles = () => {
+  const getFilteredRoles = useCallback(() => {
     return paginateData(
       roles,
       rolePage,
-      roleSearch,
+      debouncedRoleSearch,
       (role) =>
-        role.name.toLowerCase().includes(roleSearch.toLowerCase()) ||
-        (role.description?.toLowerCase().includes(roleSearch.toLowerCase()) ??
+        role.name.toLowerCase().includes(debouncedRoleSearch.toLowerCase()) ||
+        (role.description
+          ?.toLowerCase()
+          .includes(debouncedRoleSearch.toLowerCase()) ??
           false)
     );
-  };
+  }, [roles, rolePage, debouncedRoleSearch]);
 
-  const getFilteredApps = () => {
+  const getFilteredApps = useCallback(() => {
     return paginateData(
       applications,
       appPage,
-      appSearch,
+      debouncedAppSearch,
       (app) =>
-        app.name.toLowerCase().includes(appSearch.toLowerCase()) ||
-        (app.description?.toLowerCase().includes(appSearch.toLowerCase()) ??
+        app.name.toLowerCase().includes(debouncedAppSearch.toLowerCase()) ||
+        (app.description
+          ?.toLowerCase()
+          .includes(debouncedAppSearch.toLowerCase()) ??
           false)
     );
-  };
+  }, [applications, appPage, debouncedAppSearch]);
 
-  const showMessage = (message: string, isError = false) => {
+  // Message handling
+  const showMessage = useCallback((message: string, isError = false) => {
     if (isError) {
       setErrorMessage(message);
     } else {
@@ -119,22 +156,28 @@ const RoleManagement = () => {
     }
     setTimeout(() => {
       isError ? setErrorMessage("") : setSuccessMessage("");
-    }, 3000);
-  };
+    }, MESSAGE_DURATION);
+  }, []);
 
+  // Assignment handlers
   const handleAssignUserToRole = async () => {
     if (!selectedUser || !selectedRole) {
       showMessage("Please select both user and role", true);
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
       showMessage("Successfully assigned user to role");
       setSelectedUser("");
       setSelectedRole("");
+    } catch (error) {
+      showMessage("Failed to assign user to role", true);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleAssignRoleToApp = async () => {
@@ -143,25 +186,41 @@ const RoleManagement = () => {
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
       showMessage("Successfully assigned role to application");
       setSelectedRoleForApp("");
       setSelectedApp("");
+    } catch (error) {
+      showMessage("Failed to assign role to application", true);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
-  const handleSearch = (
-    value: string,
-    setSearch: (value: string) => void,
-    setPage: (page: number) => void
-  ) => {
-    setSearch(value);
-    setPage(1); // Reset to first page when searching
-  };
+  // Search handling with loading states
+  const handleSearch = useCallback(
+    (
+      value: string,
+      setSearch: (value: string) => void,
+      setPage: (page: number) => void,
+      type: "users" | "roles" | "apps"
+    ) => {
+      setSearch(value);
+      setPage(1);
+      setSearchLoading((prev) => ({ ...prev, [type]: true }));
 
-  if (loading) return <div className="loading">Loading...</div>;
+      setTimeout(() => {
+        setSearchLoading((prev) => ({ ...prev, [type]: false }));
+      }, DEBOUNCE_DELAY + 100);
+    },
+    []
+  );
+
+  if (loading)
+    return <div className="loading loading-animation">Loading...</div>;
 
   const { items: filteredUsers, totalPages: userTotalPages } =
     getFilteredUsers();
@@ -180,18 +239,29 @@ const RoleManagement = () => {
         <h2>Assign User to Role</h2>
         <div className="select-group">
           <label>Select User</label>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={userSearch}
-            onChange={(e) =>
-              handleSearch(e.target.value, setUserSearch, setUserPage)
-            }
-            className="search-input"
-          />
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={userSearch}
+              onChange={(e) =>
+                handleSearch(
+                  e.target.value,
+                  setUserSearch,
+                  setUserPage,
+                  "users"
+                )
+              }
+              className="search-input"
+            />
+            {searchLoading.users && (
+              <div className="search-loading-indicator">Searching...</div>
+            )}
+          </div>
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
+            className="select-input"
           >
             <option value="">Choose a user...</option>
             {filteredUsers.map((user) => (
@@ -209,18 +279,29 @@ const RoleManagement = () => {
 
         <div className="select-group">
           <label>Select Role</label>
-          <input
-            type="text"
-            placeholder="Search roles..."
-            value={roleSearch}
-            onChange={(e) =>
-              handleSearch(e.target.value, setRoleSearch, setRolePage)
-            }
-            className="search-input"
-          />
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="Search roles..."
+              value={roleSearch}
+              onChange={(e) =>
+                handleSearch(
+                  e.target.value,
+                  setRoleSearch,
+                  setRolePage,
+                  "roles"
+                )
+              }
+              className="search-input"
+            />
+            {searchLoading.roles && (
+              <div className="search-loading-indicator">Searching...</div>
+            )}
+          </div>
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
+            className="select-input"
           >
             <option value="">Choose a role...</option>
             {filteredRoles.map((role) => (
@@ -236,8 +317,12 @@ const RoleManagement = () => {
           />
         </div>
 
-        <button className="button" onClick={handleAssignUserToRole}>
-          Assign Role to User
+        <button
+          className="button"
+          onClick={handleAssignUserToRole}
+          disabled={loading}
+        >
+          {loading ? "Assigning..." : "Assign Role to User"}
         </button>
       </div>
 
@@ -245,18 +330,29 @@ const RoleManagement = () => {
         <h2>Assign Role to Application</h2>
         <div className="select-group">
           <label>Select Role</label>
-          <input
-            type="text"
-            placeholder="Search roles..."
-            value={roleSearch}
-            onChange={(e) =>
-              handleSearch(e.target.value, setRoleSearch, setRolePage)
-            }
-            className="search-input"
-          />
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="Search roles..."
+              value={roleSearch}
+              onChange={(e) =>
+                handleSearch(
+                  e.target.value,
+                  setRoleSearch,
+                  setRolePage,
+                  "roles"
+                )
+              }
+              className="search-input"
+            />
+            {searchLoading.roles && (
+              <div className="search-loading-indicator">Searching...</div>
+            )}
+          </div>
           <select
             value={selectedRoleForApp}
             onChange={(e) => setSelectedRoleForApp(e.target.value)}
+            className="select-input"
           >
             <option value="">Choose a role...</option>
             {filteredRoles.map((role) => (
@@ -274,18 +370,24 @@ const RoleManagement = () => {
 
         <div className="select-group">
           <label>Select Application</label>
-          <input
-            type="text"
-            placeholder="Search applications..."
-            value={appSearch}
-            onChange={(e) =>
-              handleSearch(e.target.value, setAppSearch, setAppPage)
-            }
-            className="search-input"
-          />
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="Search applications..."
+              value={appSearch}
+              onChange={(e) =>
+                handleSearch(e.target.value, setAppSearch, setAppPage, "apps")
+              }
+              className="search-input"
+            />
+            {searchLoading.apps && (
+              <div className="search-loading-indicator">Searching...</div>
+            )}
+          </div>
           <select
             value={selectedApp}
             onChange={(e) => setSelectedApp(e.target.value)}
+            className="select-input"
           >
             <option value="">Choose an application...</option>
             {filteredApps.map((app) => (
@@ -301,8 +403,12 @@ const RoleManagement = () => {
           />
         </div>
 
-        <button className="button" onClick={handleAssignRoleToApp}>
-          Assign Role to Application
+        <button
+          className="button"
+          onClick={handleAssignRoleToApp}
+          disabled={loading}
+        >
+          {loading ? "Assigning..." : "Assign Role to Application"}
         </button>
       </div>
     </div>

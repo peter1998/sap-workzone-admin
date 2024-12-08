@@ -1,3 +1,5 @@
+import { TranslationSchema } from "../types/translations";
+
 const en: TranslationSchema = {
   common: {
     title: "SAP Work Zone Admin",

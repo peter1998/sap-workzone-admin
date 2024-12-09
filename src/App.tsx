@@ -24,7 +24,7 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="header-content">
-          <h1>SAP Work Zone Admin</h1>
+          <h1>SAP Work Zone Admin First Task Completed</h1>
           <UserPreferences
             onLanguageChange={handleLanguageChange}
             onRegionChange={handleRegionChange}

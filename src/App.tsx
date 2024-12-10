@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import UserProfileForm from "./components/UserProfileForm";
 import RoleManagement from "./components/RoleManagement";
 import UserPreferences from "./components/UserPreferences";
+import {
+  LocalizationProvider,
+  useLocalization,
+} from "./contexts/LocalizationContext";
+import { useTranslation } from "./hooks/useTranslation";
 import "./styles/index.css";
-import "./styles/App.css"; // We'll create this
+import "./styles/App.css";
 
-function App() {
-  const [language, setLanguage] = useState("en");
-  const [region, setRegion] = useState("na");
+// We separate the main content into a new component so we can use hooks that depend on LocalizationContext
+const AppContent = () => {
+  // Using our custom hooks for localization
+  const { language, region, setLanguage, setRegion } = useLocalization();
+  const { t } = useTranslation();
 
   const handleLanguageChange = (newLanguage: string) => {
     setLanguage(newLanguage);
-    // You could also save this to localStorage
     localStorage.setItem("preferredLanguage", newLanguage);
   };
 
@@ -24,7 +30,8 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="header-content">
-          <h1>SAP Work Zone Admin First Task Completed</h1>
+          {/* Using our translation system for the title */}
+          <h1>{t("common.title")}</h1>
           <UserPreferences
             onLanguageChange={handleLanguageChange}
             onRegionChange={handleRegionChange}
@@ -41,6 +48,15 @@ function App() {
         </div>
       </main>
     </div>
+  );
+};
+
+// Main App component wraps everything with LocalizationProvider
+function App() {
+  return (
+    <LocalizationProvider>
+      <AppContent />
+    </LocalizationProvider>
   );
 }
 
